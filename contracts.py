@@ -137,7 +137,7 @@ def make_assumptions(original_aut):
     z = closure(aut)
     # print('Cooperative winning set:')
     # enum.print_nodes(z, aut.vars, aut.bdd)
-    assert z != aut.bdd.False, 'unsatisfiable'
+    assert z != aut.bdd.false, 'unsatisfiable'
     require_closure(z, aut)
     specs = nested_specs(z, aut)
     pprint.pprint(specs)
@@ -205,11 +205,11 @@ def game_stack(goal, player, uncovered,
     assert n > 1, n  # termination
     bdd = aut.bdd
     cur_goal = goal
-    trap = bdd.True
+    trap = bdd.true
     assumptions = set()
     # i = aut.players[player]
-    while trap != bdd.False:
-        trap = bdd.False
+    while trap != bdd.false:
+        trap = bdd.false
         for other in aut.players:
             if other == player:
                 continue
@@ -217,26 +217,26 @@ def game_stack(goal, player, uncovered,
                 cur_goal, player, other, aut)
             # assert
             u = bdd.apply('->', cur_goal, attr)
-            assert u == bdd.True, u
+            assert u == bdd.true, u
             # trim win nodes outside cooperatively win set
             attr = bdd.apply('and', attr, closure)
             trap = bdd.apply('and', trap, closure)
             # update
             cur_goal = bdd.apply('or', attr, trap)
             u = bdd.apply('not', trap)
-            if u != bdd.True:
+            if u != bdd.true:
                 # print('assumption:', trap)
                 assumptions.add((other, trap))
-            if trap != bdd.False:
+            if trap != bdd.false:
                 break
-    assert u == bdd.True, u
-    assert bdd.apply('->', cur_goal, closure) == bdd.True
-    assert bdd.apply('->', goal, closure) == bdd.True
+    assert u == bdd.true, u
+    assert bdd.apply('->', cur_goal, closure) == bdd.true
+    assert bdd.apply('->', goal, closure) == bdd.true
     game = (player, cur_goal, goal, assumptions)
     stack.append(game)
     u = bdd.apply('not', cur_goal)
     uncovered = bdd.apply('and', uncovered, u)
-    if uncovered == bdd.False:
+    if uncovered == bdd.false:
         print('covered')
         return
     # tail-recursive
@@ -246,7 +246,7 @@ def game_stack(goal, player, uncovered,
             continue
         cox = ue_preimage(cur_goal, next_player, aut)
         cox = bdd.apply('and', cox, closure)
-        if bdd.apply('diff', cox, cur_goal) != bdd.False:
+        if bdd.apply('diff', cox, cur_goal) != bdd.false:
             break
     game_stack(cur_goal, next_player, uncovered,
                stack, aut, closure)
@@ -277,7 +277,7 @@ def _unconditional_assumption_single(goal, player, other, aut):
 
 def closure(aut):
     bdd = aut.bdd
-    z = bdd.True
+    z = bdd.true
     zold = None
     while z != zold:
         zold = z
@@ -289,7 +289,7 @@ def closure(aut):
 
 def closure_for_one_player(z, player, aut):
     bdd = aut.bdd
-    zj = bdd.True
+    zj = bdd.true
     zjold = None
     while zj != zjold:
         zjold = zj
@@ -304,7 +304,7 @@ def ancestors(z, goal, player, aut):
     bdd = aut.bdd
     z_pre = preimage(z, aut)
     target = bdd.apply('and', z_pre, goal)
-    y = bdd.False
+    y = bdd.false
     yold = None
     while y != yold:
         yold = y
@@ -321,7 +321,7 @@ def preimage(target, aut):
     n = len(aut.players)
     ivar = '_i'
     # needed to force extra steps outside
-    pre = bdd.False
+    pre = bdd.false
     for i, p in aut.turns.iteritems():
         assert i < n, (i, n)
         assert p in aut.players, (p, aut.players)
@@ -344,7 +344,7 @@ def image(source, aut):
     bdd = aut.bdd
     n = len(aut.players)
     ivar = '_i'
-    pre = bdd.False
+    pre = bdd.false
     for i, p in aut.turns.iteritems():
         assert i < n, (i, n)
         assert p in aut.players, (p, aut.players)
@@ -366,7 +366,7 @@ def ue_preimage(target, team, aut):
     bdd = aut.bdd
     n = len(aut.players)
     ivar = '_i'
-    pre = bdd.False
+    pre = bdd.false
     for i, p in aut.turns.iteritems():
         assert i < n, (i, n)
         assert p in aut.players, (p, aut.players)
@@ -410,7 +410,7 @@ def attractor(target, team, aut):
 
 def _trap(safe, team, aut, unless=None):
     bdd = aut.bdd
-    q = bdd.True
+    q = bdd.true
     qold = None
     while q != qold:
         qold = q
@@ -648,11 +648,11 @@ def game_stack_shallow(goal, player, uncovered,
     assert n > 1, n  # termination
     bdd = aut.bdd
     cur_goal = goal
-    trap = bdd.True
+    trap = bdd.true
     assumptions = set()
     i = aut.players[player]
     j = i
-    while trap != bdd.False:
+    while trap != bdd.false:
         j = (j + 1) % n
         if j == i:
             continue
@@ -661,19 +661,19 @@ def game_stack_shallow(goal, player, uncovered,
             cur_goal, player, other, aut)
         # assert
         u = bdd.apply('->', cur_goal, attr)
-        assert u == bdd.True, u
+        assert u == bdd.true, u
         # trim win nodes outside cooperatively win set
         attr = bdd.apply('and', attr, closure)
         # update
         cur_goal = bdd.apply('or', attr, trap)
         u = bdd.apply('not', trap)
-        if u != bdd.True:
+        if u != bdd.true:
             assumptions.add(trap)
-    assert u == bdd.True, u
+    assert u == bdd.true, u
     game = (player, cur_goal, goal, assumptions)
     # u = bdd.apply('not', cur_goal)
     # uncovered = bdd.apply('and', uncovered, u)
-    # if uncovered == bdd.False:
+    # if uncovered == bdd.false:
     #     return
     # tail-recursive
     # j = (i + 1) % n
