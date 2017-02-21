@@ -1,3 +1,7 @@
+"""Decompose GR(1) property into a contract."""
+# Copyright 2015 by California Institute of Technology
+# All rights reserved. Licensed under BSD-3.
+#
 import copy
 import logging
 import pprint
