@@ -1,4 +1,4 @@
 # pip install -r requirements.txt
-omega>=0.0.7
 dd==0.3.0
+omega==0.0.7
 
