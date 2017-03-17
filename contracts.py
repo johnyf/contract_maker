@@ -546,11 +546,11 @@ def _bitblast_attr(aut, a, t):
     assert aut.players == a.players
     for k in aut.players:
         if k in aut.init:
-            a.init[k] = map(f, aut.init[k])
+            a.init[k] = list(map(f, aut.init[k]))
         if k in aut.action:
-            a.action[k] = map(f, aut.action[k])
+            a.action[k] = list(map(f, aut.action[k]))
     for k in aut.win:
-        a.win[k] = map(f, aut.win[k])
+        a.win[k] = list(map(f, aut.win[k]))
 
 
 def _bitvector_to_bdd(aut):
