@@ -618,7 +618,7 @@ def _prime_vars(ordvars, suffix="'"):
 
 def _partition_vars(dvars, players=None):
     if players is None:
-        players = {d['owner'] for d in dvars.itervalues()}
+        players = {d['owner'] for d in dvars.values()}
     partition = {p: set() for p in players}
     for var, d in dvars.items():
         p = d['owner']
