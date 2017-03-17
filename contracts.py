@@ -189,7 +189,7 @@ def nested_spec_for_one_player(closure, player, aut):
     if s not in aut.win:
         return spec
     for goal in aut.win[s]:
-        print('goal:', goal)
+        print(('goal:', goal))
         goal = bdd.apply('and', closure, goal)
         uncovered = bdd.apply('diff', closure, goal)
         stack = list()
