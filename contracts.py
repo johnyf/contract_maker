@@ -326,7 +326,7 @@ def preimage(target, aut):
     ivar = '_i'
     # needed to force extra steps outside
     pre = bdd.false
-    for i, p in aut.turns.iteritems():
+    for i, p in aut.turns.items():
         assert i < n, (i, n)
         assert p in aut.players, (p, aut.players)
         ip = (i + 1) % n
@@ -349,7 +349,7 @@ def image(source, aut):
     n = len(aut.players)
     ivar = '_i'
     pre = bdd.false
-    for i, p in aut.turns.iteritems():
+    for i, p in aut.turns.items():
         assert i < n, (i, n)
         assert p in aut.players, (p, aut.players)
         ip = (i + 1) % n
@@ -371,7 +371,7 @@ def ue_preimage(target, team, aut):
     n = len(aut.players)
     ivar = '_i'
     pre = bdd.false
-    for i, p in aut.turns.iteritems():
+    for i, p in aut.turns.items():
         assert i < n, (i, n)
         assert p in aut.players, (p, aut.players)
         ip = (i + 1) % n
@@ -491,15 +491,15 @@ class Automaton(object):
         c.append(s)
         s = 'Variables: \n {v}'.format(v=pprint.pformat(self.vars))
         c.append(s)
-        for k, v in self.init.iteritems():
+        for k, v in self.init.items():
             s = '\ninit: {k}\n---\n'.format(k=k)
             c.append(s)
             c.extend(v)
-        for k, v in self.action.iteritems():
+        for k, v in self.action.items():
             s = '\naction: {k}\n---\n'.format(k=k)
             c.append(s)
             c.extend(v)
-        for k, v in self.win.iteritems():
+        for k, v in self.win.items():
             s = '\nwin: {k}\n---\n'.format(k=k)
             c.append(s)
             c.extend(v)
@@ -526,9 +526,9 @@ def _bitblast(aut):
     t, init, action = bv.bitblast_table(aut.vars, players)
     init.pop(None)
     action.pop(None)
-    for k, v in init.iteritems():
+    for k, v in init.items():
         aut.init[k].extend(v)
-    for k, v in action.iteritems():
+    for k, v in action.items():
         aut.action[k].extend(v)
     # conjoin now, instead of later with BDDs
     for k in aut.players:
@@ -561,7 +561,7 @@ def _bitvector_to_bdd(aut):
     ordbits = _pick_var_order(dbits)
     levels, prime_map = _prime_vars(ordbits)
     bdd = aut.bdd
-    for var, level in levels.iteritems():
+    for var, level in levels.items():
         bdd.add_var(var, level)
     partition = _partition_vars(dbits, players)
     a = Automaton()
@@ -570,14 +570,14 @@ def _bitvector_to_bdd(aut):
     a.vars = copy.deepcopy(aut.vars)
     # auto-populated
     prime = dict()
-    for p, pvars in partition.iteritems():
+    for p, pvars in partition.items():
         prime[p] = {
-            k: v for k, v in prime_map.iteritems()
+            k: v for k, v in prime_map.items()
             if k in pvars}
     a.prime = prime
-    for p, d in a.prime.iteritems():
-        a.unprime[p] = {v: k for k, v in d.iteritems()}
-    a.turns = {v: k for k, v in aut.players.iteritems()}
+    for p, d in a.prime.items():
+        a.unprime[p] = {v: k for k, v in d.items()}
+    a.turns = {v: k for k, v in aut.players.items()}
     for k in aut.init:
         u = aut.init[k]
         v = list()
@@ -620,7 +620,7 @@ def _partition_vars(dvars, players=None):
     if players is None:
         players = {d['owner'] for d in dvars.itervalues()}
     partition = {p: set() for p in players}
-    for var, d in dvars.iteritems():
+    for var, d in dvars.items():
         p = d['owner']
         partition[p].add(var)
     assert 'all' not in partition, set(partition)
@@ -637,7 +637,7 @@ def fill_blanks(aut):
         if p not in aut.action:
             aut.action[p] = list()
     for d in (aut.init, aut.action):
-        for k, v in d.iteritems():
+        for k, v in d.items():
             if not v:
                 d[k] = [true]
     # aut.win untouched
