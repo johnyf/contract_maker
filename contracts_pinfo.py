@@ -4,6 +4,7 @@
 # All rights reserved. Licensed under BSD-3.
 # Author: Ioannis Filippidis
 import copy
+from distutils.version import StrictVersion
 import logging
 import pprint
 
@@ -11,8 +12,10 @@ from dd import cudd
 from omega.logic import syntax as stx
 from omega.symbolic import bdd as scope
 from omega.symbolic import bdd as sym_bdd
+import omega
+assert StrictVersion(omega.__version__) >= StrictVersion('0.1.0')
 
-from synthesizer import symbolic as sym
+import symbolic as sym
 
 
 log = logging.getLogger(__name__)
