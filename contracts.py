@@ -10,7 +10,7 @@ from dd import bdd as _bdd
 from omega.automata import TransitionSystem
 from omega.symbolic.logicizer import graph_to_logic
 from omega.symbolic import enumeration as enum
-import symbolic as sym
+import symbolic_old as sym
 
 
 logger = logging.getLogger(__name__)
