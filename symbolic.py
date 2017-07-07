@@ -17,170 +17,6 @@ from omega.symbolic import fol as _fol
 from omega.symbolic import symbolic as _sym
 
 
-TURN = '_i'
-
-
-def preimage(target, aut):
-    """Predecessors with interleaving representation."""
-    # needed to exclude extra steps
-    pre = aut.false
-    for p, i in aut.players.items():
-        action = aut.action[p]
-        # equivalent to existential quantification of `_i`
-        u = next_turn(target, i, aut)
-        u = aut.replace_with_primed(aut.varlist[p], u)
-        # note that `action` does not mention the index `_i`
-        # so, we existentially go from a set that does not
-        # constrain `_i`, to the intersection with `_i = p + 1`
-        # of a set that mentions `_i`.
-        u &= action
-        qvars = aut.prime_vars(aut.varlist[p])
-        u = aut.exist(qvars, u)
-        u = and_turn(u, i, aut)
-        pre |= u
-    return pre
-
-
-def image(source, aut):
-    n = len(aut.players)
-    pre = aut.false
-    for p, i in aut.players.items():
-        assert i < n, (i, n)
-        action = aut.action[p]
-        u = aut.replace(source, {TURN: i})
-        u &= action
-        qvars = aut.varlist[p]
-        u = aut.exist(qvars, u)
-        u = aut.replace_with_unprimed(aut.varlist[p], u)
-        ip = (i + 1) % n
-        u = and_turn(u, ip, aut)
-        pre |= u
-    return pre
-
-
-def ue_preimage(target, team, aut):
-    pre = aut.false
-    for p, i in aut.players.items():
-        u = next_turn(target, i, aut)
-        u = aut.replace_with_primed(aut.varlist[p], u)
-        action = aut.action[p]
-        if p not in team:
-            u = ~ u
-        u &= action
-        qvars = aut.prime_vars(aut.varlist[p])
-        u = aut.exist(qvars, u)
-        if p not in team:
-            u = ~ u
-        u = and_turn(u, i, aut)
-        pre |= u
-    return pre
-
-
-def next_turn(u, i, aut):
-    """Replace `TURN == (i + 1) % n` in `u`."""
-    assert i >= 0, i
-    n = len(aut.players)
-    assert i < n, (i, n)
-    ip = (i + 1) % n
-    return aut.replace(u, {TURN: ip})
-
-
-def and_turn(u, i, aut):
-    """Conjoin `u /\ (TURN = i)`."""
-    assert i >= 0, i
-    n = len(aut.players)
-    assert i < n, (i, n)
-    s = '{turn} = {i}'.format(turn=TURN, i=i)
-    u &= aut.add_expr(s)
-    return u
-
-
-def attractor(target, team, aut):
-    q = target
-    qold = None
-    while q != qold:
-        qold = q
-        q |= ue_preimage(q, team, aut)
-    return q
-
-
-def _trap(safe, team, aut, unless=None):
-    # debug case: safe = True
-    q = aut.true
-    qold = None
-    while q != qold:
-        qold = q
-        q &= ue_preimage(q, team, aut)
-        q &= safe
-        if unless is not None:
-            q |= unless
-    return q
-
-
-def test_post():
-    aut = Automaton()
-    aut.players = dict(alice=0, bob=1)
-    aut.vars = dict(x=dict(type='bool', owner='alice'),
-                    _i=dict(type='saturating',
-                            dom=(0, 1), owner='alice'))
-    aut.action_expr['alice'] = ["x <=> ~ x'"]
-    fill_blanks(aut)
-    print(aut)
-    aut = aut.build()
-    u = aut.add_expr('x /\ (_i = 0)')
-    v = image(u, aut, pre=False)
-    enum.print_nodes(v, aut.vars, aut.bdd)
-
-
-def test_multiplayer_automaton():
-    a = Automaton()
-    a.players = dict(car_a=0, car_b=1, car_c=2)
-    a.vars = dict(
-        a=dict(type='saturating', dom=(0, 4), owner='car_a'),
-        b=dict(type='saturating', dom=(0, 5), owner='car_b'),
-        c=dict(type='bool', owner='car_c'))
-    fill_blanks(a)
-    aut = a.build()
-    print(aut)
-
-
-def analyze_to_debug(aut):
-    both_unblocked = unblocked_set(aut)
-    env_action = aut.action['env']
-    sys_action = aut.action['sys']
-    action = sys_action & env_action
-    care_target = both_unblocked
-    care_source = fx.ue_preimage(
-        sys_action, env_action,
-        care_target, aut,
-        evars=aut.upvars, moore=True)
-    care_source = care_source & both_unblocked
-    # care_source = care_source & aut.add_expr('a=4 /\ b=5'))
-    enum.dump_relation(action, aut, care_source,
-                       care_target, pretty=True)
-
-
-#    Relation to `omega.symbolic.symbolic.Automaton`
-#    ===============================================
-#
-#      - uvars = varlists["env_vars"]
-#      - upvars = varlists["env_vars'"]
-#      - ubvars = varlists["env_all"]
-#      - evars = varlists["sys_vars"]
-#      - epvars = varlists["sys_vars'"]
-#      - ebvars = varlists["sys_all"]
-#      - uevars = varlists["env_sys"]
-#      - uepvars = varlists["env_sys'"]
-
-# - there are more than two groups of variables ("multi-player")
-# - what quantifier applies to each group changes
-# - priming can be applied "on the spot"
-# - renaming to primed can be constructed "on the spot"
-
-# Caching the renaming maps is a form of optimization.
-# Only benchmarking can justify optimizations.
-
-
 class Automaton(_fol.Context):
     """Multi-player game.
 
@@ -266,7 +102,8 @@ class Automaton(_fol.Context):
 
     def __init__(self):
         super(Automaton, self).__init__()
-        # player 0 moves first (cox reverses this)
+        # `varlist` says which variables represent each component
+        # essentially, `varlist` is Lamport's `\mu`
         self.varlist = dict()  # groups of variables for various uses
         self.owners = set()
         self.players = dict()  # player (str) -> turn (int)
@@ -337,12 +174,6 @@ class Automaton(_fol.Context):
         s = '\n'.join(str(u) for u in c)
         return 'Multi-player game structure:\n' + s
 
-    # user will write "_expr" only when defining the
-    # spec, and throughout algorithm code will work
-    # with bdds and write less, and less cluttered.
-    # The opposite (`init_bdd`) would be a worse
-    # design choice.
-
     def declare_variables(self, **vrs):
         d = bv.make_symbol_table(vrs)
         self.add_vars(d, flexible=True)
@@ -368,10 +199,15 @@ class Automaton(_fol.Context):
         super(Automaton, self).add_vars(vrs)
 
     @property
-    def all_player_vars(self):
+    def vars_of_all_players(self):
+        """Set of variables of all players."""
+        return self.vars_of_players(self.players)
+
+    def vars_of_players(self, players):
+        """Set of variables controlled by `players`."""
         gen = (
             v for k, v in self.varlist.items()
-            if k in self.players)
+            if k in players)
         return set().union(*gen)
 
     def prime_vars(self, vrs):
@@ -383,17 +219,40 @@ class Automaton(_fol.Context):
         return [stx.unprime(var) for var in vrs]
 
     def replace_with_primed(self, vrs, u):
-        """Substitute primed for unprimed `vrs` in `u`."""
+        """Substitute primed for unprimed `vrs` in `u`.
+
+        For example:
+
+        ```
+        u = aut.add_expr("x /\ y /\ z")
+        vrs = ['x', 'y']
+        v = aut.replace_with_primed(vrs, u)
+        v_ = aut.add_expr("x' /\ y' /\ z")
+        assert v == v_
+        ```
+        """
         let = {k: stx.prime(k) for k in vrs}
-        return self.replace(u, let)
+        return self.let(let, u)
 
     def replace_with_unprimed(self, vrs, u):
         """Substitute unprimed `vrs` for primed in `u`."""
         let = {stx.prime(k): k for k in vrs}
-        return self.replace(u, let)
+        return self.let(let, u)
 
-    # what we really need is a method called:
-    # `take_closure`
+    def implies_type_hints(self, u, vrs):
+        """Return `True` if `u => TypeInv` for all vars.
+
+        All declared variables and constants are taken into
+        account.
+        """
+        # not named `assert_type_invariant` because the
+        # assertion is about the state predicate `u`,
+        # so a static conclusion.
+        vrs = {var for var in self.vars
+               if not stx.isprimed(var)}
+        type_hints = _conjoin_type_hints(vrs, self)
+        r = type_hints | ~ u
+        return r == self.true
 
     def type_hint_for(self, vrs):
         """Return initial predicate using type hints for `vrs`.
@@ -405,10 +264,26 @@ class Automaton(_fol.Context):
     def type_action_for(self, vrs):
         """Return action using type hints for `vrs`.
 
-        For each integer variable, the "type action" is:
+        The type action has the form:
 
-        /\ min_value <= var <= max_value  (* type invariant *)
-        /\ min_value <= var' <= max_value
+            TypeAction == Inv /\ Inv'
+
+        where `Inv` is a box. A box is a conjunction of integer
+        intervals, one for each variable. For each integer variable,
+        the interval constraint has the form:
+
+            var \in min_value...max_value
+
+        The implementation supports only integer variables,
+        so the interval constraint is implemented as the
+        conjunction of two inequalities:
+
+            /\ min_value <= var
+            /\ var <= max_value
+
+        If we take the closure, the second conjunct will
+        result from the type invariant. The above is usable
+        with either approach (w/ or w/o closure).
 
         @return: formula as `str`
         """
@@ -416,7 +291,11 @@ class Automaton(_fol.Context):
         return self._type_hints_to_formulas(vrs, action=True)
 
     def _type_hints_to_formulas(self, vrs, action):
-        """Return type invariant or action from type hints."""
+        """Return type constraint for `vrs` as `str`.
+
+        If `action is  True` then return type invariant `Inv`,
+        else the action `Inv /\ Inv'`.
+        """
         r = list()
         for var in vrs:
             hints = self.vars[var]
@@ -425,12 +304,13 @@ class Automaton(_fol.Context):
             assert hints['type'] == 'int', hints
             a, b = hints['dom']
             s = '({a} <= {var}) /\ ({var}  <= {b})'
-            type_invariant = s.format(a=a, b=b, var=var)
-            r.append(type_invariant)
+            type_inv = s.format(a=a, b=b, var=var)
+            r.append(type_inv)
             if not action:
                 continue
-            type_action = s.format(a=a, b=b, var=stx.prime(var))
-            r.append(type_action)
+            type_inv_primed = s.format(
+                a=a, b=b, var=stx.prime(var))
+            r.append(type_inv_primed)
         return stx.conj(r)
 
     def map_expr_to_bdd(self):
@@ -465,8 +345,10 @@ class Automaton(_fol.Context):
             return self.op_bdd[e]
         return self.add_expr(e)
 
-    def assert_consistent(self):
+    def assert_consistent(self, moore=True):
         """Assert that `init` and `win` contain state predicates."""
+        varlists = list(self.varlist.values())
+        assert pairwise_disjoint(varlists)
         for u in self.init.values():
             assert sym_bdd.is_state_predicate(u)
         # Moore actions
@@ -475,16 +357,67 @@ class Automaton(_fol.Context):
                 stx.unprime(var)
                 for var in self.support(action)
                 if stx.isprimed(var)}
-            assert primed.issubset(self.varlist[player]), (
-                (player, primed))
+            # applicable only after unzip
+            # assert primed.issubset(self.varlist[player]), (
+            #     (player, primed))
         for d in self.win.values():
             for v in d.values():
                 for u in v:
                     assert sym_bdd.is_state_predicate(u)
 
 
-# functions for bit ordering in BDD
-# bring unprimed and primed bits to be adjacent in BDD
+def conj_actions_of(players, aut):
+    """Return conjunction of actions from `players`."""
+    action = aut.true
+    for p in players:
+        action &= aut.action[p]
+    return action
+
+
+def _conjoin_type_hints(vrs, fol):
+    """Return conjunction of type hints for `vrs` as BDD."""
+    r = list()
+    for var in vrs:
+        hints = fol.vars[var]
+        if hints['type'] == 'bool':
+            # The constraint `var \in BOOLEAN` will
+            # anyway dissapear at the BDD layer.
+            continue
+        assert hints['type'] == 'int', hints
+        a, b = hints['dom']
+        s = '({a} <= {var}) /\ ({var} <= {b})'
+        type_hints = s.format(a=a, b=b, var=var)
+        r.append(type_hints)
+    u = fol.add_expr(stx.conj(r))
+    return u
+
+
+def print_expr(u, aut):
+    """Print minimal DNF, taking into account type hints."""
+    s = dumps_expr(u, aut)
+    print('---- min DNF ----')
+    print(s)
+    print('=================')
+
+
+def type_hints_for_support(u, fol):
+    """Return type hints for vars in `fol.support(u)`."""
+    vrs = fol.support(u)
+    s = fol.type_hint_for(vrs)
+    types = fol.add_expr(s)
+    return types
+
+
+def dumps_expr(u, fol, care=None, use_types=False):
+    """Return minimal DNF, taking into account type hints."""
+    types = type_hints_for_support(u, fol)
+    if care is None:
+        care = fol.true
+    if use_types:
+        types = type_hints_for_support(u, fol)
+        care &= types
+    s = fol.to_expr(u, care=care, show_dom=True)
+    return s
 
 
 def _detect_non_player_keys(aut):
@@ -536,3 +469,49 @@ def pick(c):
     If `c` is empty, return `None`.
     """
     return next(iter(c), None)
+
+
+def is_primed_state_predicate(u, fol):
+    """Return `True` if `u` depends only on primed variables.
+
+    Only constant parameters (rigid variables) can appear
+    unprimed in `u`. Any flexible variables in `u` should
+    be primed.
+
+    An identifier that is declared only unprimed is assumed
+    to be a rigid variables. If a primed sibling is declared,
+    then the identifier is assumed to be a flexible variable.
+    """
+    support = fol.support(u)
+    primed = {
+        name for name in support
+        if stx.isprimed(name)}
+    unprimed = support - primed
+    any_flexible = False
+    for name in unprimed:
+        primed = stx.prime(name)
+        if primed in fol.vars:
+            any_flexible = True
+            break
+    return not any_flexible
+
+
+def is_action_of_player(action, player, aut):
+    """Return `True` if `action` constrains only `player`.
+
+    The `player` is represented by the variables in
+    `aut.varlist[player]`.
+    """
+    support = aut.support(action)
+    primed = {var for var in support if stx.isprimed(var)}
+    vrs = aut.vars_of_players([player])
+    vrs_p = aut.prime_vars(vrs)
+    r = primed.issubset(vrs_p)
+    return r
+
+
+def pairwise_disjoint(c):
+    """Return whether elements in `c` are pairwise disjoint."""
+    union = set().union(*c)
+    n = sum(len(u) for u in c)
+    return n == len(union)
