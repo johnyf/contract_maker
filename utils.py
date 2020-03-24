@@ -10,7 +10,7 @@ import ballpark
 import humanize
 from omega.symbolic import bdd as sym_bdd
 
-from synthesizer import symbolic as sym
+import symbolic as sym
 
 
 TURN = '_i'

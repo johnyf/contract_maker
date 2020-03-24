@@ -4,8 +4,8 @@
 #
 from omega.symbolic import bdd as scope
 
-from synthesizer import symbolic as sym
-from synthesizer import utils
+import symbolic as sym
+import utils
 
 
 def group_as_env_sys(team, aut):

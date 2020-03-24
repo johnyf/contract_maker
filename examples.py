@@ -3,8 +3,8 @@ import logging
 
 from dd import cudd
 
-from synthesizer import contracts_pinfo as pinfo
-from synthesizer import utils
+import contracts_pinfo as pinfo
+import utils
 
 
 TURN = utils.TURN

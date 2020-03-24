@@ -1,5 +1,5 @@
 """Nontinterleaving fixpoint operators."""
-from synthesizer import symbolic as sym
+import symbolic as sym
 
 
 def preimage(target, aut):
