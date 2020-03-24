@@ -327,7 +327,7 @@ def single_recurrence_goal(target, z_next, within, players, ij, aut):
         if len(team) > 1:
             single_recurrence_goal(
                 ~ eta_team, z_next_new, within_new,
-                team, ij_new, aut, attr)
+                team, ij_new, aut)
         y = attr | trap
     # print('Y')
     # print_slice(y, aut)
