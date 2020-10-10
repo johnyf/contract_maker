@@ -6,6 +6,33 @@ starting from GR(1) specifications.
 This implementation is experimental, so expect changes.
 
 
+Installation
+============
+
+The dependencies are listed in the file `requirements.txt`. Installing a
+suitable version of the package `dd` can be done as follows.
+
+```shell
+pip uninstall --yes dd
+pip install cython
+pip download --no-dependencies dd==0.5.1
+tar xzf dd-*.tar.gz
+cd dd-*/
+export CUDD_VERSION=3.0.0
+export CUDD_GZ=cudd-${CUDD_VERSION}.tar.gz
+curl -sSL https://sourceforge.net/projects/cudd-mirror/files/${CUDD_GZ}/download > ${CUDD_GZ}
+tar -xzf ${CUDD_GZ}
+python -c 'from download import make_cudd; make_cudd()'
+python setup.py install --cudd
+```
+
+These steps will download and build the C library CUDD, and then build and
+install `dd`, including the Cython module `dd.cudd`. The steps are based on
+[this `.travis.yml`](https://github.com/tulip-control/tulip-control/blob/ce54897c242689f45ad33650f157bf1805b35ed6/.travis.yml#L45-L56).
+The repository `contract_maker` requires `dd==0.5.1` (as listed in the file
+`requirements.txt`), and the above steps correspond to that version of `dd`.
+
+
 References
 ==========
 
