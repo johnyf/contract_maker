@@ -37,14 +37,22 @@ References
 ==========
 
 Filippidis I., Murray R.M.<br>
-  [Symbolic construction of GR(1) contracts for systems with full information][1]<br>
-  The 2016 American Control Conference (ACC)<br>
-  Boston, MA, July 6--8, 2016
+  [Layering assume-guarantee contracts for hierarchical system design][1]<br>
+  Proceedings of the IEEE<br>
+  Volume 106, Number 9, pages 1616--1654, 2018<br>
+  [DOI][2]
 
 
 Filippidis I., Murray R.M.<br>
-  [Symbolic construction of GR(1) contracts for synchronous systems with full information][2]<br>
-  ArXiv CoRR abs/1508.02705, August, 2015
+  [Symbolic construction of GR(1) contracts for systems with full information][3]<br>
+  The 2016 American Control Conference (ACC)<br>
+  Boston, MA, July 6--8, 2016<br>
+  pages 782--789, [DOI][4]
+
+
+Filippidis I., Murray R.M.<br>
+  [Symbolic construction of GR(1) contracts for synchronous systems with full information][5]<br>
+  ArXiv CoRR abs/1508.02705, August, 2015<br>
   (technical report with proofs and more details)
 
 
@@ -52,5 +60,8 @@ License
 =======
 [BSD-3](http://opensource.org/licenses/BSD-3-Clause), see file `LICENSE`.
 
-[1]: http://resolver.caltech.edu/CaltechCDSTR:2016.003
-[2]: https://arxiv.org/abs/1508.02705
+[1]: https://resolver.caltech.edu/CaltechAUTHORS:20180920-104049492
+[2]: https://doi.org/10.1109/JPROC.2018.2834926
+[3]: https://resolver.caltech.edu/CaltechCDSTR:2016.003
+[4]: https://doi.org/10.1109/ACC.2016.7525009
+[5]: https://arxiv.org/abs/1508.02705
